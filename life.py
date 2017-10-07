@@ -9,12 +9,12 @@ from random import random
 
 HEIGHT = 768
 WIDTH = 1024
-GRID_HEIGHT = 150
-GRID_WIDTH = 200
+GRID_HEIGHT = 75
+GRID_WIDTH = 100
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 PROB = 0.90
-LAPSE = 500
+LAPSE = 300
 
 def main():
     pygame.init()
@@ -33,9 +33,9 @@ def main():
             if event.type == pygame.QUIT:
                 done = True
 
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    grid.tick()
+            # elif event.type == pygame.KEYDOWN:
+            #     if event.key == pygame.K_SPACE:
+            #         grid.tick()
 
             elif event.type == USEREVENT+1:
                 grid.tick()
@@ -60,14 +60,6 @@ class Grid:
     def erase_cell(self, pos):
         self.grid[pos[1]][pos[0]] = 0
 
-    def get_cells(self, live):
-        result = []
-        for row in range(self.height):
-            for col in range(self.width):
-                if self.grid[row][col] == live:
-                    result.append((col, row))
-        return result
-
     def initiate(self):
         for row in range(self.height):
             for col in range(self.width):
@@ -76,20 +68,16 @@ class Grid:
                     self.grid[row][col] = 1
 
     def tick(self):
-        to_die = []
-        to_live = []
+        to_die, to_live = [], []
 
-        lives = self.get_cells(1)
-        for cell in lives:
-            neighbors = self.get_neighbors(cell)
-            if len(neighbors) < 2 or len(neighbors) > 3:
-                to_die.append(cell)
-
-        deads = self.get_cells(0)
-        for cell in deads:
-            neighbors = self.get_neighbors(cell)
-            if len(neighbors) == 3:
-                to_live.append(cell)
+        for row in range(self.height):
+            for col in range(self.width):
+                cell = (col, row)
+                neighbors = self.get_neighbors(cell)
+                if (len(neighbors) < 2 or len(neighbors) > 3) and self.get_value(cell) == 1:
+                    to_die.append(cell)
+                elif len(neighbors) == 3 and self.get_value(cell) == 0:
+                    to_live.append(cell)
 
         for cell in to_die:
             self.erase_cell(cell)
@@ -98,27 +86,11 @@ class Grid:
 
     def get_neighbors(self, pos):
         x, y = pos
-        if x == 0 and y == 0:
-            neighbors = [(x+1, y), (x+1, y+1), (x, y+1)]
-        elif x == GRID_WIDTH - 1 and y == GRID_HEIGHT - 1:
-            neighbors = [(x-1, y), (x-1, y-1), (x, y-1)]
-        elif x == 0 and y == GRID_HEIGHT - 1:
-            neighbors = [(x, y-1), (x+1, y-1), (x+1, y)]
-        elif x == GRID_WIDTH - 1 and y == 0:
-            neighbors = [(x, y+1), (x-1, y+1), (x-1, y)]
-        elif x == 0:
-            neighbors = [(x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1), (x, y+1)]
-        elif x == GRID_WIDTH - 1:
-            neighbors = [(x, y-1), (x, y+1), (x-1, y+1), (x-1, y), (x-1, y-1)]
-        elif y == 0:
-            neighbors = [(x+1, y), (x+1, y+1), (x, y+1), (x-1, y+1), (x-1, y)]
-        elif y == GRID_HEIGHT - 1:
-            neighbors = [(x, y-1), (x+1, y-1), (x+1, y), (x-1, y), (x-1, y-1)]
-        else:
-            neighbors = [(x, y-1), (x+1, y-1), (x+1, y), (x+1, y+1), (x, y+1),
-                         (x-1, y+1), (x-1, y), (x-1, y-1)   ]
-        result = [i for i in neighbors if self.get_value(i) == 1]
-        return result
+        moves = [(0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1)]
+        # return [move for move in moves if x + move[0] >= 0 and x + move[0] <= GRID_WIDTH-1 and
+        #                                   y + move[1] >= 0 and y + move[1] <= GRID_HEIGHT-1 and
+        #                                   self.get_value((x+move[0], y+move[1])) == 1]
+        return [move for move in moves if self.get_value(((x+move[0])%GRID_WIDTH, (y+move[1])%GRID_HEIGHT)) == 1]
 
     def draw(self, screen):
         for i in range(1, self.height):
